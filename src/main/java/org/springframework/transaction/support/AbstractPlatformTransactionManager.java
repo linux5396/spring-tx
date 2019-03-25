@@ -83,8 +83,8 @@ import org.springframework.transaction.UnexpectedRollbackException;
 public abstract class AbstractPlatformTransactionManager implements PlatformTransactionManager, Serializable {
 
 	/**
-	 * Always activate transaction synchronization, even for "empty" transactions
-	 * that result from PROPAGATION_SUPPORTS with no existing backend transaction.
+	 * 始终激活事务同步，即使是“空”事务也是如此
+	 * 来自PROPAGATION_SUPPORTS的结果，没有现有的后端事务。
 	 *
 	 * @see org.springframework.transaction.TransactionDefinition#PROPAGATION_SUPPORTS
 	 * @see org.springframework.transaction.TransactionDefinition#PROPAGATION_NOT_SUPPORTED
@@ -93,9 +93,9 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	public static final int SYNCHRONIZATION_ALWAYS = 0;
 
 	/**
-	 * Activate transaction synchronization only for actual transactions,
-	 * that is, not for empty ones that result from PROPAGATION_SUPPORTS with
-	 * no existing backend transaction.
+	 * 仅为实际事务激活事务同步，
+	 * 也就是说，不是由PROPAGATION_SUPPORTS产生的空的。
+	 * 没有现有的后端事务。
 	 *
 	 * @see org.springframework.transaction.TransactionDefinition#PROPAGATION_REQUIRED
 	 * @see org.springframework.transaction.TransactionDefinition#PROPAGATION_MANDATORY
@@ -104,7 +104,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	public static final int SYNCHRONIZATION_ON_ACTUAL_TRANSACTION = 1;
 
 	/**
-	 * Never active transaction synchronization, not even for actual transactions.
+	 * 从不激活事务同步，即使对于实际事务也是如此。
 	 */
 	public static final int SYNCHRONIZATION_NEVER = 2;
 
@@ -344,6 +344,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 
 	/**
 	 * 获取事务；即事务传播行为、隔离级别、超时等的实现。
+	 *
 	 * @param definition the TransactionDefinition instance (can be {@code null} for defaults),
 	 *                   describing propagation behavior, isolation level, timeout etc.
 	 * @return
@@ -405,7 +406,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	}
 
 	/**
-	 * Create a TransactionStatus for an existing transaction.
+	 * 为现有事务创建TransactionStatus。
 	 */
 	private TransactionStatus handleExistingTransaction(
 			TransactionDefinition definition, Object transaction, boolean debugEnabled)
@@ -1123,6 +1124,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	 * @see #doResume
 	 */
 	protected Object doSuspend(Object transaction) throws TransactionException {
+		//中断
 		throw new TransactionSuspensionNotSupportedException(
 				"Transaction manager [" + getClass().getName() + "] does not support transaction suspension");
 	}
