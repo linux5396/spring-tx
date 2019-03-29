@@ -1,19 +1,3 @@
-/*
- * Copyright 2002-2018 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.springframework.transaction;
 
 import java.sql.Connection;
@@ -21,27 +5,7 @@ import java.sql.Connection;
 import org.springframework.lang.Nullable;
 
 /**
- * Interface that defines Spring-compliant transaction properties.
- * Based on the propagation behavior definitions analogous to EJB CMT attributes.
- *
- * <p>Note that isolation level and timeout settings will not get applied unless
- * an actual new transaction gets started. As only {@link #PROPAGATION_REQUIRED},
- * {@link #PROPAGATION_REQUIRES_NEW} and {@link #PROPAGATION_NESTED} can cause
- * that, it usually doesn't make sense to specify those settings in other cases.
- * Furthermore, be aware that not all transaction managers will support those
- * advanced features and thus might throw corresponding exceptions when given
- * non-default values.
- *
- * <p>The {@link #isReadOnly() read-only flag} applies to any transaction context,
- * whether backed by an actual resource transaction or operating non-transactionally
- * at the resource level. In the latter case, the flag will only apply to managed
- * resources within the application, such as a Hibernate {@code Session}.
- *
- * @author Juergen Hoeller
- * @see PlatformTransactionManager#getTransaction(TransactionDefinition)
- * @see org.springframework.transaction.support.DefaultTransactionDefinition
- * @see org.springframework.transaction.interceptor.TransactionAttribute
- * @since 08.05.2003
+ * 包含Spring事务的隔离级别、传播行为、超时等定义。
  */
 public interface TransactionDefinition {
 
@@ -76,59 +40,59 @@ public interface TransactionDefinition {
 	int PROPAGATION_SUPPORTS = 1;
 
 	/**
-	 * Support a current transaction; throw an exception if no current transaction
-	 * exists. Analogous to the EJB transaction attribute of the same name.
-	 * <p>Note that transaction synchronization within a {@code PROPAGATION_MANDATORY}
-	 * scope will always be driven by the surrounding transaction.
+	 * 支持当前事务;如果没有当前事务则抛出异常
+	 * 存在。类似于同名的EJB事务属性。
+	 * <p>请注意{@code PROPAGATION_MANDATORY}中的事务同步
+	 * 范围将始终由周围的事务驱动。
 	 */
 	int PROPAGATION_MANDATORY = 2;
 
 	/**
-	 * Create a new transaction, suspending the current transaction if one exists.
-	 * Analogous to the EJB transaction attribute of the same name.
-	 * <p><b>NOTE:</b> Actual transaction suspension will not work out-of-the-box
-	 * on all transaction managers. This in particular applies to
-	 * {@link org.springframework.transaction.jta.JtaTransactionManager},
-	 * which requires the {@code javax.transaction.TransactionManager} to be
-	 * made available it to it (which is server-specific in standard Java EE).
-	 * <p>A {@code PROPAGATION_REQUIRES_NEW} scope always defines its own
-	 * transaction synchronizations. Existing synchronizations will be suspended
-	 * and resumed appropriately.
+	 * 创建一个新事务，暂停当前事务（如果存在）。
+	 * 类似于同名的EJB事务属性。
+	 * <p> <b>注意：</ b>实际事务暂停不会开箱即用
+	 * 对所有事务管理。这尤其适用于
+	 * {@link org.springframework.transaction.jta.JtaTransactionManager}，
+	 * 需要{@code javax.transaction.TransactionManager}
+	 * 使其可用（在标准Java EE中是特定于服务器的）。
+	 * <p> {@code PROPAGATION_REQUIRES_NEW}范围始终定义自己的范围
+	 * 事务同步。现有同步将被暂停
+	 * 并适当恢复。
 	 *
 	 * @see org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager
 	 */
 	int PROPAGATION_REQUIRES_NEW = 3;
 
 	/**
-	 * Do not support a current transaction; rather always execute non-transactionally.
-	 * Analogous to the EJB transaction attribute of the same name.
-	 * <p><b>NOTE:</b> Actual transaction suspension will not work out-of-the-box
-	 * on all transaction managers. This in particular applies to
-	 * {@link org.springframework.transaction.jta.JtaTransactionManager},
-	 * which requires the {@code javax.transaction.TransactionManager} to be
-	 * made available it to it (which is server-specific in standard Java EE).
-	 * <p>Note that transaction synchronization is <i>not</i> available within a
-	 * {@code PROPAGATION_NOT_SUPPORTED} scope. Existing synchronizations
-	 * will be suspended and resumed appropriately.
+	 * 不支持当前事务;而是总是以非事务方式执行。
+	 * 类似于同名的EJB事务属性。
+	 * <p> <b>注意：</ b>实际事务暂停不会开箱即用
+	 * 对所有事务经理。这尤其适用于
+	 * {@link org.springframework.transaction.jta.JtaTransactionManager}，
+	 * 需要{@code javax.transaction.TransactionManager}
+	 * 使其可用（在标准Java EE中是特定于服务器的）。
+	 * <p>请注意，a中的事务同步<i>不</ i>
+	 * {@code PROPAGATION_NOT_SUPPORTED}范围。现有同步
+	 * 将被暂停和适当恢复。
 	 *
 	 * @see org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager
 	 */
 	int PROPAGATION_NOT_SUPPORTED = 4;
 
 	/**
-	 * Do not support a current transaction; throw an exception if a current transaction
-	 * exists. Analogous to the EJB transaction attribute of the same name.
-	 * <p>Note that transaction synchronization is <i>not</i> available within a
+	 * 不支持当前事务;如果是当前事务则抛出异常
+	 * 存在。类似于同名的EJB事务属性。
+	 * <p>请注意，a中的事务同步<i>不</ i>
 	 * {@code PROPAGATION_NEVER} scope.
 	 */
 	int PROPAGATION_NEVER = 5;
 
 	/**
-	 * Execute within a nested transaction if a current transaction exists,
-	 * behave like {@link #PROPAGATION_REQUIRED} otherwise. There is no
-	 * analogous feature in EJB.
-	 * <p><b>NOTE:</b> Actual creation of a nested transaction will only work on
-	 * specific transaction managers. Out of the box, this only applies to the JDBC
+	 * 如果存在当前事务，则在嵌套事务中执行，
+	 * 表现得像{@link #PROPAGATION_REQUIRED}否则。没有
+	 * EJB中的类似功能。
+	 * <p> <b>注意：</ b>实际创建嵌套事务只会起作用
+	 * 特定的事务管理。开箱即用，这仅适用于JDBC3.0
 	 * {@link org.springframework.jdbc.datasource.DataSourceTransactionManager}
 	 * when working on a JDBC 3.0 driver. Some JTA providers might support
 	 * nested transactions as well.
@@ -196,8 +160,8 @@ public interface TransactionDefinition {
 
 
 	/**
-	 * Use the default timeout of the underlying transaction system,
-	 * or none if timeouts are not supported.
+	 * 使用基础事务系统的默认超时，
+	 * 如果不支持超时，则为无。
 	 */
 	int TIMEOUT_DEFAULT = -1;
 

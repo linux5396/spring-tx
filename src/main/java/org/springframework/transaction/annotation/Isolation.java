@@ -30,49 +30,50 @@ import org.springframework.transaction.TransactionDefinition;
 public enum Isolation {
 
 	/**
-	 * Use the default isolation level of the underlying datastore.
-	 * All other levels correspond to the JDBC isolation levels.
+	 * 使用基础数据存储的默认隔离级别，该级别则是根据数据库级别。
+	 * 所有其他级别对应于JDBC隔离级别。
+	 *
 	 * @see java.sql.Connection
 	 */
 	DEFAULT(TransactionDefinition.ISOLATION_DEFAULT),
 
 	/**
-	 * A constant indicating that dirty reads, non-repeatable reads and phantom reads
-	 * can occur. This level allows a row changed by one transaction to be read by
-	 * another transaction before any changes in that row have been committed
-	 * (a "dirty read"). If any of the changes are rolled back, the second
-	 * transaction will have retrieved an invalid row.
+	 * 一个常量，表示脏读，不可重复读和幻像读可以发生。
+	 * 此级别允许读取由一个事务更改的行
+	 * 在该行中的任何更改已提交之前的另一个事务
+	 * （“脏读”）。如果任何更改被回滚，则第二个
+	 * 事务将检索到无效的行。
+	 * 这也是最低隔离级别
+	 *
 	 * @see java.sql.Connection#TRANSACTION_READ_UNCOMMITTED
 	 */
 	READ_UNCOMMITTED(TransactionDefinition.ISOLATION_READ_UNCOMMITTED),
 
 	/**
-	 * A constant indicating that dirty reads are prevented; non-repeatable reads
-	 * and phantom reads can occur. This level only prohibits a transaction
-	 * from reading a row with uncommitted changes in it.
+	 * 一个常量，表示防止脏读;
+	 * 不可重复的读数和幻像读取可能会发生。
+	 * 此级别仅禁止事务从读取行中有未提交的更改。
+	 *
 	 * @see java.sql.Connection#TRANSACTION_READ_COMMITTED
 	 */
 	READ_COMMITTED(TransactionDefinition.ISOLATION_READ_COMMITTED),
 
 	/**
-	 * A constant indicating that dirty reads and non-repeatable reads are
-	 * prevented; phantom reads can occur. This level prohibits a transaction
-	 * from reading a row with uncommitted changes in it, and it also prohibits
-	 * the situation where one transaction reads a row, a second transaction
-	 * alters the row, and the first transaction rereads the row, getting
-	 * different values the second time (a "non-repeatable read").
+	 * 一个常量，表示脏读和不可重复读被阻止;可以发生幻像读取。
+	 * 此级别禁止事务从读取行中有未提交的更改，它也禁止
+	 * 一个事务读取一行，第二个事务
+	 * 改变行，第一个事务重新读取行，得到第二次不同的值（“不可重复读取”）。
+	 *
 	 * @see java.sql.Connection#TRANSACTION_REPEATABLE_READ
 	 */
 	REPEATABLE_READ(TransactionDefinition.ISOLATION_REPEATABLE_READ),
 
 	/**
-	 * A constant indicating that dirty reads, non-repeatable reads and phantom
-	 * reads are prevented. This level includes the prohibitions in
-	 * {@code ISOLATION_REPEATABLE_READ} and further prohibits the situation
-	 * where one transaction reads all rows that satisfy a {@code WHERE}
-	 * condition, a second transaction inserts a row that satisfies that
-	 * {@code WHERE} condition, and the first transaction rereads for the
-	 * same condition, retrieving the additional "phantom" row in the second read.
+	 * 一个常量，表示脏读，不可重复读和幻像读取被阻止。这个级别包括禁令
+	 * {@code ISOLATION_REPEATABLE_READ}并进一步禁止其中一个事务读取满足{@code WHERE}的所有行condition，第二个事务插入满足该条件的行
+	 * {@code WHERE}条件，第一个事务重新读取
+	 * 相同的条件，在第二次读取中检索额外的“幻像”行。
+	 * 总之就是一句话：在可重复读的基础上再禁止幻读。
 	 * @see java.sql.Connection#TRANSACTION_SERIALIZABLE
 	 */
 	SERIALIZABLE(TransactionDefinition.ISOLATION_SERIALIZABLE);
