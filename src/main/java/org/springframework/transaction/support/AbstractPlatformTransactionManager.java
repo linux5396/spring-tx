@@ -1,19 +1,3 @@
-/*
- * Copyright 2002-2018 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.springframework.transaction.support;
 
 import java.io.IOException;
@@ -37,47 +21,9 @@ import org.springframework.transaction.TransactionSuspensionNotSupportedExceptio
 import org.springframework.transaction.UnexpectedRollbackException;
 
 /**
- * Abstract base class that implements Spring's standard transaction workflow,
- * serving as basis for concrete platform transaction managers like
- * {@link org.springframework.transaction.jta.JtaTransactionManager}.
- *
- * <p>This base class provides the following workflow handling:
- * <ul>
- * <li>determines if there is an existing transaction;
- * <li>applies the appropriate propagation behavior;
- * <li>suspends and resumes transactions if necessary;
- * <li>checks the rollback-only flag on commit;
- * <li>applies the appropriate modification on rollback
- * (actual rollback or setting rollback-only);
- * <li>triggers registered synchronization callbacks
- * (if transaction synchronization is active).
- * </ul>
- *
- * <p>Subclasses have to implement specific template methods for specific
- * states of a transaction, e.g.: begin, suspend, resume, commit, rollback.
- * The most important of them are abstract and must be provided by a concrete
- * implementation; for the rest, defaults are provided, so overriding is optional.
- *
- * <p>Transaction synchronization is a generic mechanism for registering callbacks
- * that get invoked at transaction completion time. This is mainly used internally
- * by the data access support classes for JDBC, Hibernate, JPA, etc when running
- * within a JTA transaction: They register resources that are opened within the
- * transaction for closing at transaction completion time, allowing e.g. for reuse
- * of the same Hibernate Session within the transaction. The same mechanism can
- * also be leveraged for custom synchronization needs in an application.
- *
- * <p>The state of this class is serializable, to allow for serializing the
- * transaction strategy along with proxies that carry a transaction interceptor.
- * It is up to subclasses if they wish to make their state to be serializable too.
- * They should implement the {@code java.io.Serializable} marker interface in
- * that case, and potentially a private {@code readObject()} method (according
- * to Java serialization rules) if they need to restore any transient state.
- *
- * @author Juergen Hoeller
- * @see #setTransactionSynchronization
- * @see TransactionSynchronizationManager
- * @see org.springframework.transaction.jta.JtaTransactionManager
- * @since 28.03.2003
+ * 修改過：
+ * 1.獲取事務的方法。
+ * 2.傳播行爲的處理（在處理存在事務的情況下）
  */
 @SuppressWarnings("serial")
 public abstract class AbstractPlatformTransactionManager implements PlatformTransactionManager, Serializable {
@@ -347,31 +293,28 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	 *
 	 * @param definition the TransactionDefinition instance (can be {@code null} for defaults),
 	 *                   describing propagation behavior, isolation level, timeout etc.
-	 * @return
+	 * @return TransactionStatus
 	 * @throws TransactionException
 	 */
 	@Override
 	public final TransactionStatus getTransaction(@Nullable TransactionDefinition definition) throws TransactionException {
 		Object transaction = doGetTransaction();
-
 		// Cache debug flag to avoid repeated checks.
 		boolean debugEnabled = logger.isDebugEnabled();
-
 		if (definition == null) {
 			// Use defaults if no transaction definition given.
 			definition = new DefaultTransactionDefinition();
 		}
-
 		if (isExistingTransaction(transaction)) {
 			// Existing transaction found -> check propagation behavior to find out how to behave.
+			//判斷當前綫程是否存在事務。
+			//依據：當前綫程記錄的鏈接不爲空&&connectionHolder中的trans..Active屬性不爲空。
 			return handleExistingTransaction(definition, transaction, debugEnabled);
 		}
-
 		// Check definition settings for new transaction.
 		if (definition.getTimeout() < TransactionDefinition.TIMEOUT_DEFAULT) {
 			throw new InvalidTimeoutException("Invalid transaction timeout", definition.getTimeout());
 		}
-
 		// No existing transaction found -> check propagation behavior to find out how to proceed.
 		if (definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_MANDATORY) {
 			throw new IllegalTransactionStateException(
@@ -407,6 +350,7 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 
 	/**
 	 * 为现有事务创建TransactionStatus。
+	 * 獲取事務時，處理現有的事務。
 	 */
 	private TransactionStatus handleExistingTransaction(
 			TransactionDefinition definition, Object transaction, boolean debugEnabled)
@@ -426,12 +370,13 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 			return prepareTransactionStatus(
 					definition, null, false, newSynchronization, debugEnabled, suspendedResources);
 		}
-
+		//如果是要求新事物，則挂斷原有事務。
 		if (definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW) {
 			if (debugEnabled) {
 				logger.debug("Suspending current transaction, creating new transaction with name [" +
 						definition.getName() + "]");
 			}
+			//挂起原有事務
 			SuspendedResourcesHolder suspendedResources = suspend(transaction);
 			try {
 				boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
@@ -445,7 +390,8 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 				throw beginEx;
 			}
 		}
-
+		//如果是nested，則設置保存點。保存點的作用：一般外層的事務狀態不會影響内層，設置保存點，即外部也可以影響内部。
+		//這裏就是處理嵌入式事務。
 		if (definition.getPropagationBehavior() == TransactionDefinition.PROPAGATION_NESTED) {
 			if (!isNestedTransactionAllowed()) {
 				throw new NestedTransactionNotSupportedException(
@@ -455,6 +401,8 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 			if (debugEnabled) {
 				logger.debug("Creating nested transaction with name [" + definition.getName() + "]");
 			}
+			//如果是設置保存點，則沒有必要挂起原有事務。
+			//這就是爲什麽外層事務可以影響内層事務的提交的原因。
 			if (useSavepointForNestedTransaction()) {
 				// Create savepoint within existing Spring-managed transaction,
 				// through the SavepointManager API implemented by TransactionStatus.
@@ -535,15 +483,18 @@ public abstract class AbstractPlatformTransactionManager implements PlatformTran
 	}
 
 	/**
-	 * Initialize transaction synchronization as appropriate.
+	 * 根据需要初始化事务同步。
+	 * 这个方法就是对每个事务进行初始化处理，包括一些定义的载入等等。
 	 */
 	protected void prepareSynchronization(DefaultTransactionStatus status, TransactionDefinition definition) {
+		//先判断是否是新同步。
 		if (status.isNewSynchronization()) {
 			TransactionSynchronizationManager.setActualTransactionActive(status.hasTransaction());
 			TransactionSynchronizationManager.setCurrentTransactionIsolationLevel(
 					definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT ?
 							definition.getIsolationLevel() : null);
 			TransactionSynchronizationManager.setCurrentTransactionReadOnly(definition.isReadOnly());
+			//设置事务名称
 			TransactionSynchronizationManager.setCurrentTransactionName(definition.getName());
 			TransactionSynchronizationManager.initSynchronization();
 		}

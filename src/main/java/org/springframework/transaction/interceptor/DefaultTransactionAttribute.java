@@ -107,7 +107,7 @@ public class DefaultTransactionAttribute extends DefaultTransactionDefinition im
 	}
 
 	/**
-	 * Return a descriptor for this transaction attribute,
+	 * 返回此事务属性的描述符，
 	 * or {@code null} if none.
 	 * @since 4.3.4
 	 */
